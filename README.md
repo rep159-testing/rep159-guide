@@ -18,9 +18,9 @@ repository says which versions work together and how to use them.
 
 | Path | What it is |
 |---|---|
-| [`rep159.repos`](rep159.repos) | Every REP 159 component, on its `rep159` branch, as one colcon workspace. |
+| [`rep159.repos`](rep159.repos) | Every REP 159 component as one colcon workspace, on its `rep159` branch or on the branch of an open pull request into `rep159`. |
 | [`examples/lyrical-extension`](examples/lyrical-extension) | A third-party distribution, `my-extended-distro`, that extends the official ROS 2 Lyrical with `binary_import`: index, distribution file, checks, a container build, and the release steps. |
-| [`docs/SOFTWARE_CHANGED.md`](docs/SOFTWARE_CHANGED.md) | The tools changed for REP 159: repository, pull request into `rep159`, and what each one adds. |
+| [`docs/software_changed.md`](docs/software_changed.md) | The tools changed for REP 159, the branch of each one, and the features it adds. |
 | [`docs/rosinstall_generator.md`](docs/rosinstall_generator.md) | What rosinstall_generator does with an extended distribution today, and what REP 159 support would add. |
 
 ## Quick start

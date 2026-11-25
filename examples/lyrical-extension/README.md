@@ -30,7 +30,7 @@ in Lyrical:
 
 The REP 159 versions of rosdistro, rosdep, bloom and ros_buildfarm are not
 released yet. `rep159.repos`, at the root of this repository, lists them
-on their `rep159` branches; build it once with colcon:
+with the branch to use; build it once with colcon:
 
 ```bash
 mkdir -p rep159_ws/src && cd rep159_ws
@@ -109,8 +109,8 @@ Pass `--rosdistro my-extended-distro` to rosdep:
 
 `tools/build_in_container.sh` runs the same steps in a clean
 `ubuntu:resolute` container, with rosdistro and rosdep pip-installed from
-their `rep159` branches (`ROSDISTRO_REF` and `ROSDEP_REF` select another
-branch or commit):
+the branches in `rep159.repos` (`ROSDISTRO_REF` and `ROSDEP_REF` select
+another branch or commit):
 
 ```
 rclcpp                       -> ros-lyrical-rclcpp
@@ -120,15 +120,16 @@ rosidl_default_generators    -> ros-lyrical-rosidl-default-generators
 ros-lyrical-* debs installed: 111
 All system dependencies have been satisfied
 ...
-Summary: 2 packages finished [32.9s]
+Summary: 2 packages finished [33.4s]
 Summary: 145 tests, 0 errors, 0 failures, 29 skipped
 ros-lyrical-* installed: 111
 other ros-* installed: 0
 ```
 
 (Run of 2026-11-25, `ubuntu:resolute` with packages.ros.org, rosdistro
-`rep159` at `46a7580` and rosdep `rep159` at `3d52dad`. The heads of the
-open pull requests give the same result.)
+`feat/rep159-workspace-package` at `df99d83` and rosdep
+`feat/rep159-binary-lookup` at `e2e8b96`. Their `rep159` branches as of
+that date, `46a7580` and `3d52dad`, give the same result.)
 
 Porting is still the package's own job. Jazzy and Kilted packages often need
 changes for Lyrical, and this setup exposes that as soon as you build.
@@ -200,6 +201,6 @@ no parent prefix and does not add the workspace package. Its
 - **Parents of parents across indexes.** ros_buildfarm follows a parent's
   own parents only when they are in the child's index. Lyrical has none,
   so `my-extended-distro` is not affected.
-- **`rep159` moves.** `rep159.repos` follows branches, so a new checkout
-  can differ from the one checked here. The pull requests it names in its
-  header were still open on 2026-11-25.
+- **The branches move.** `rep159.repos` follows branches, so a new
+  checkout can differ from the one checked here. When the pull requests
+  named in its header are merged, its entries go back to `rep159`.

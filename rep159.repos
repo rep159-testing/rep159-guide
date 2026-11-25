@@ -1,14 +1,16 @@
 # REP 159 (rosdistro extensions) software, as one colcon workspace.
 #
-# Every tool follows its `rep159` branch, the integration branch of the
-# REP 159 work in rep159-testing. Pull requests land there, so a new
-# `vcs import` (or `vcs pull`) gets the latest state. Repositories without
-# a `rep159` branch follow the branch named in their entry.
-#
-# Open pull requests into `rep159` (state on 2026-11-25), not in the
-# branches until they are merged:
-#   rosdistro #2, rosdep #1, bloom #1, ros_buildfarm #1
-#   https://github.com/rep159-testing/<repository>/pull/<number>
+# Every tool follows a branch of its rep159-testing repository: `rep159`,
+# the integration branch, when it holds the REP 159 work. rosdistro,
+# rosdep, bloom and ros_buildfarm still have part of it on a branch with an
+# open pull request into `rep159` (2026-11-25); their entries follow that
+# branch until it is merged:
+#   rosdistro      feat/rep159-workspace-package  pull request #2
+#   rosdep         feat/rep159-binary-lookup      pull request #1
+#   bloom          feat/rep159-workspace-package  pull request #1
+#   ros_buildfarm  feat/rep159-core               pull request #1
+# Repositories without a `rep159` branch follow the branch named in their
+# entry.
 #
 #   vcs import --input rep159.repos src
 #   colcon build --merge-install
@@ -46,19 +48,19 @@ repositories:
   tools/rosdistro:
     type: git
     url: https://github.com/rep159-testing/rosdistro.git
-    version: rep159
+    version: feat/rep159-workspace-package  # until rosdistro#2 is merged into rep159
   tools/rosdep:
     type: git
     url: https://github.com/rep159-testing/rosdep.git
-    version: rep159
+    version: feat/rep159-binary-lookup  # until rosdep#1 is merged into rep159
   tools/bloom:
     type: git
     url: https://github.com/rep159-testing/bloom.git
-    version: rep159
+    version: feat/rep159-workspace-package  # until bloom#1 is merged into rep159
   tools/ros_buildfarm:
     type: git
     url: https://github.com/rep159-testing/ros_buildfarm.git
-    version: rep159
+    version: feat/rep159-core  # until ros_buildfarm#1 is merged into rep159
   tools/rosdistro-reviewer:
     type: git
     url: https://github.com/rep159-testing/rosdistro-reviewer.git

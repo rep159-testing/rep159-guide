@@ -10,13 +10,13 @@
 #
 # Usage: tools/build_in_container.sh [DISTRO]   (default: my-extended-distro)
 # Environment: ROSDISTRO_REF, ROSDEP_REF (branch or commit of the
-# rep159-testing forks; default rep159, as in rep159.repos), MAKEFLAGS
+# rep159-testing forks; defaults: the branches in rep159.repos), MAKEFLAGS
 # (default -j2), DOCKER_MEMORY (default 6g).
 set -euo pipefail
 EXAMPLE_DIR=$(cd "$(dirname "$0")/.." && pwd)
 DISTRO=${1:-my-extended-distro}
-ROSDISTRO_REF=${ROSDISTRO_REF:-rep159}
-ROSDEP_REF=${ROSDEP_REF:-rep159}
+ROSDISTRO_REF=${ROSDISTRO_REF:-feat/rep159-workspace-package}
+ROSDEP_REF=${ROSDEP_REF:-feat/rep159-binary-lookup}
 
 docker run --rm --memory "${DOCKER_MEMORY:-6g}" \
   -v "$EXAMPLE_DIR:/example:ro" \
@@ -37,7 +37,7 @@ apt-get update -qq
 apt-get install -qq -y --no-install-recommends build-essential cmake git \
   python3-pip python3-rosdep python3-vcstool python3-colcon-common-extensions >/dev/null
 
-step "REP 159 rosdistro ${ROSDISTRO_REF:0:10} and rosdep ${ROSDEP_REF:0:10} over the stock ones"
+step "REP 159 rosdistro ${ROSDISTRO_REF} and rosdep ${ROSDEP_REF} over the stock ones"
 pip3 install -q --break-system-packages --no-deps \
   "git+https://github.com/rep159-testing/rosdistro@${ROSDISTRO_REF}" \
   "git+https://github.com/rep159-testing/rosdep@${ROSDEP_REF}"
