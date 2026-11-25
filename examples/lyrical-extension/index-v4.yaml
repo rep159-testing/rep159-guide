@@ -1,0 +1,20 @@
+%YAML 1.1
+# Example REP 159 third-party index: one distribution, `acme`, that extends
+# the official ROS 2 Lyrical with extension_method: binary_import.
+#
+# Lyrical is not listed here. acme/distribution.yaml names the index that
+# holds it (extends[].index_url), so this index only lists what the third
+# party maintains. Regenerate the cache with tools/regenerate-cache.sh.
+---
+type: index
+version: 4
+distributions:
+  acme:
+    distribution: [acme/distribution.yaml]
+    distribution_cache: acme-cache.yaml.gz
+    distribution_status: active
+    distribution_type: ros2
+    # REP 159 index v4 key; Lyrical is supported until May 2031, and a
+    # child should not outlive its parent.
+    distribution_eol_date: 2031-05-31
+    python_version: 3

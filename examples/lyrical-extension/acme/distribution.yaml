@@ -1,0 +1,45 @@
+%YAML 1.1
+# Example REP 159 child distribution: `acme` extends the official ROS 2
+# Lyrical (ros/rosdistro) with binary_import. acme uses Lyrical's binaries
+# as they are (ros-lyrical-*, installed in /opt/ros/lyrical) and adds
+# packages that Lyrical does not have. Its own packages are built and
+# released as ros-acme-*, installed in /opt/ros/acme.
+#
+# The two repositories are real community packages, released for Jazzy or
+# Kilted but not for Lyrical. Their ROS dependencies are all in Lyrical.
+# They have source entries only. To release them, bloom adds a release
+# stanza per repository (see README.md).
+#
+# Rules a binary_import child must follow (rosdistro enforces them when it
+# loads this file):
+# - It cannot redefine a repository or package that Lyrical has. Rebuilding
+#   Lyrical packages under the child's name is what source_rebuild is for.
+# - The one exception is the child's workspace package (`ros_workspace` by
+#   default, or the `workspace_package` key). The child releases it so
+#   /opt/ros/acme/setup.sh chains /opt/ros/lyrical. It needs its own release
+#   stanza.
+---
+extends:
+- distro_name: lyrical
+  # Where Lyrical is defined. Without index_url the parent is looked up in
+  # this file's own index.
+  index_url: https://raw.githubusercontent.com/ros/rosdistro/master/index-v4.yaml
+  extension_method: binary_import
+release_platforms:
+  ubuntu:
+  - resolute
+repositories:
+  kinematic_pose_msgs:
+    source:
+      type: git
+      url: https://github.com/qleonardolp/kinematic_pose_msgs.git
+      version: master
+    status: maintained
+  dispatcher:
+    source:
+      type: git
+      url: https://github.com/nasa-jpl/dispatcher.git
+      version: master
+    status: maintained
+type: distribution
+version: 3

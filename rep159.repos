@@ -1,0 +1,103 @@
+# REP 159 (rosdistro extensions) software, as one colcon workspace.
+#
+# Every tool is pinned to a full SHA, checked together on 2026-11-24. The
+# comment on each entry names where the commit comes from:
+# - rosdistro, rosdep, bloom and ros_buildfarm: the head of an open pull
+#   request into the repository's `rep159` branch. Each head is `rep159`
+#   plus the pull request's commits, so once it is merged `rep159` holds the
+#   same code. Until then the head branches can be force-pushed: refresh a
+#   pin from its pull request, not from memory.
+# - rosdistro-reviewer, reprepro-updater, ros_workspace, ros_workspace_shell:
+#   the tip of their `rep159` branch.
+#
+#   vcs import --input rep159.repos src
+#   colcon build --merge-install
+#   source install/setup.bash
+#
+# --merge-install is required: ros_workspace looks for ament_package in its
+# own install prefix. Without a ROS installation sourced, the build needs
+# cmake, a C compiler and the Python modules catkin_pkg, rospkg, PyYAML,
+# empy and setuptools.
+#
+# To start a third-party distribution on top of the official ROS 2 Lyrical,
+# see examples/lyrical-extension/README.md.
+#
+# Notes:
+# - ros_workspace and ros_workspace_shell both install the root setup files
+#   (setup.sh, local_setup.*, _local_setup_util.py) of the prefix. In a
+#   colcon install, colcon's own prefix scripts replace them. To test a
+#   package's own setup chain, install it into a separate prefix with
+#   cmake, the way the farm builds it into /opt/ros/<distro>.
+# - reprepro-updater has no setup.py. colcon skips it; the ros_buildfarm
+#   sync jobs run its scripts directly.
+# - config/ holds data (indexes, distribution files, buildfarm configs) of
+#   the rep159-testing test harness. colcon finds no packages there. Two
+#   index/config pairs:
+#     rep159-rosdistro, ros_buildfarm_config, branch feat/extendable-gazebo:
+#       upstream, srcext, binext, the extendable* test distributions,
+#       extendablejetty/extendablelyrical* and a trimmed lyrical.
+#     rep159-rosdistro-shell, ros_buildfarm_config-shell, branch
+#       rep159-shell: upstream, srcext, binext, ground, derived.
+# - bloom's REP 159 rules-template tests need empy 4. With Ubuntu's
+#   empy 3.3.4 they pass alone but fail in the full suite ("interpreter
+#   stdout proxy lost").
+repositories:
+  # Python tools (colcon package type: python)
+  tools/rosdistro:
+    type: git
+    url: https://github.com/rep159-testing/rosdistro.git
+    version: df99d830c178c0a8a73c2995256fd6b5cf956e44  # PR #2, feat/rep159-workspace-package -> rep159
+  tools/rosdep:
+    type: git
+    url: https://github.com/rep159-testing/rosdep.git
+    version: e2e8b965fb4c0ed270c39ad21d4aa5f2ed2fa71b  # PR #1, feat/rep159-binary-lookup -> rep159
+  tools/bloom:
+    type: git
+    url: https://github.com/rep159-testing/bloom.git
+    version: 301cb09785ec4898c73e5ba8ae0f19f8fc952c66  # PR #1, feat/rep159-workspace-package -> rep159
+  tools/ros_buildfarm:
+    type: git
+    url: https://github.com/rep159-testing/ros_buildfarm.git
+    version: c8dedc81a6d075b036066d985241e26006a89e36  # PR #1, feat/rep159-core -> rep159
+  tools/rosdistro-reviewer:
+    type: git
+    url: https://github.com/rep159-testing/rosdistro-reviewer.git
+    version: 1c5c0cd1152b25ef85392af75b27ce3183abd714  # rep159
+  tools/reprepro-updater:
+    type: git
+    url: https://github.com/rep159-testing/reprepro-updater.git
+    version: 93ed2dcb5bc8bdd222ff2bc949e8037c5472898f  # rep159
+  # Workspace packages (CMake) and the ament bootstrap ros_workspace needs
+  workspace/ros_workspace:
+    type: git
+    url: https://github.com/rep159-testing/ros_workspace.git
+    version: 4997f8579613da1e296de8cd1f2cc0c9827e62f9  # rep159 (1.0.4 + parent chain)
+  workspace/ros_workspace_shell:
+    type: git
+    url: https://github.com/rep159-testing/ros_workspace_shell.git
+    version: a89cc7b77b4b290b72b5ea16dddff193b6dbc334  # rep159, tag 0.1.0
+  workspace/ament_package:
+    type: git
+    url: https://github.com/rep159-testing/ament_package.git
+    version: 98089783110f7606a90e8ef9786719c3d0cd32f9  # main, tag 0.18.3
+  workspace/ament_cmake_core:
+    type: git
+    url: https://github.com/rep159-testing/ament_cmake_core.git
+    version: f807d2ade807b3455057d4c64d089e0134a1e800  # main, tag 2.8.8
+  # Indexes and buildfarm configuration of the test harness (data, no colcon packages)
+  config/rep159-rosdistro:
+    type: git
+    url: https://github.com/rep159-testing/rep159-rosdistro.git
+    version: f3891ce15ab45fbf47434be9283031a669bdacb1  # feat/extendable-gazebo
+  config/ros_buildfarm_config:
+    type: git
+    url: https://github.com/rep159-testing/ros_buildfarm_config.git
+    version: 5bdad6b5c57edd061a68472fcd9b2daa0ebf9b98  # feat/extendable-gazebo
+  config/rep159-rosdistro-shell:
+    type: git
+    url: https://github.com/rep159-testing/rep159-rosdistro.git
+    version: 59d3aec9d5c7f4cf65b80e360bcde796013d0b3c  # rep159-shell
+  config/ros_buildfarm_config-shell:
+    type: git
+    url: https://github.com/rep159-testing/ros_buildfarm_config.git
+    version: a3397cba6243cb396edf308453b2d6a12014f44e  # rep159-shell
