@@ -1,17 +1,5 @@
 # REP 159 (rosdistro extensions) software, as one colcon workspace.
 #
-# Every tool follows a branch of its rep159-testing repository: `rep159`,
-# the integration branch, when it holds the REP 159 work. rosdistro,
-# rosdep, bloom and ros_buildfarm still have part of it on a branch with an
-# open pull request into `rep159` (2026-11-25); their entries follow that
-# branch until it is merged:
-#   rosdistro      feat/rep159-workspace-package  pull request #2
-#   rosdep         feat/rep159-binary-lookup      pull request #1
-#   bloom          feat/rep159-workspace-package  pull request #1
-#   ros_buildfarm  feat/rep159-core               pull request #1
-# Repositories without a `rep159` branch follow the branch named in their
-# entry.
-#
 #   vcs import --input rep159.repos src
 #   colcon build --merge-install
 #   source install/setup.bash
@@ -20,29 +8,7 @@
 # own install prefix. Without a ROS installation sourced, the build needs
 # cmake, a C compiler and the Python modules catkin_pkg, rospkg, PyYAML,
 # empy and setuptools.
-#
-# To start a third-party distribution on top of the official ROS 2 Lyrical,
-# see examples/lyrical-extension/README.md.
-#
-# Notes:
-# - ros_workspace and ros_workspace_shell both install the root setup files
-#   (setup.sh, local_setup.*, _local_setup_util.py) of the prefix. In a
-#   colcon install, colcon's own prefix scripts replace them. To test a
-#   package's own setup chain, install it into a separate prefix with
-#   cmake, the way the farm builds it into /opt/ros/<distro>.
-# - reprepro-updater has no setup.py. colcon skips it; the ros_buildfarm
-#   sync jobs run its scripts directly.
-# - config/ holds data (indexes, distribution files, buildfarm configs) of
-#   the rep159-testing test harness. colcon finds no packages there. Two
-#   index/config pairs:
-#     rep159-rosdistro, ros_buildfarm_config, branch feat/extendable-gazebo:
-#       upstream, srcext, binext, the extendable* test distributions,
-#       extendablejetty/extendablelyrical* and a trimmed lyrical.
-#     rep159-rosdistro-shell, ros_buildfarm_config-shell, branch
-#       rep159-shell: upstream, srcext, binext, ground, derived.
-# - bloom's REP 159 rules-template tests need empy 4. With Ubuntu's
-#   empy 3.3.4 they pass alone but fail in the full suite ("interpreter
-#   stdout proxy lost").
+
 repositories:
   # Python tools (colcon package type: python)
   tools/rosdistro:
