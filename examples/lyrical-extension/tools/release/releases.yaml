@@ -1,0 +1,16 @@
+# Repositories this example releases, in order. bloom makes every package
+# depend on the workspace package, so it goes first.
+distro: my-extended-distro
+parent: lyrical
+workspace_package: ros_workspace
+repositories:
+  ros_workspace:
+    # Not in the committed distribution file: a workspace package needs its
+    # own release stanza, and the release only exists in this run.
+    source: {type: git, url: https://github.com/rep159-testing/ros_workspace.git, version: rep159}
+    version: 1.0.4-1
+    release_tag: ':{version}'
+  kinematic_pose_msgs:
+    release_tag: ':{version}'
+  dispatcher:
+    release_tag: 'v:{version}'  # upstream tags look like v0.4.5
