@@ -8,15 +8,15 @@
 #   4. rosdep install: their ROS dependencies resolve to ros-lyrical-* debs;
 #   5. colcon build and test on top of /opt/ros/lyrical.
 #
-# Usage: tools/build_in_container.sh [DISTRO]   (default: acme)
-# Environment: ROSDISTRO_REF, ROSDEP_REF (commits of the rep159-testing
-# forks; keep them equal to rep159.repos), MAKEFLAGS (default -j2),
-# DOCKER_MEMORY (default 6g).
+# Usage: tools/build_in_container.sh [DISTRO]   (default: my-extended-distro)
+# Environment: ROSDISTRO_REF, ROSDEP_REF (branch or commit of the
+# rep159-testing forks; default rep159, as in rep159.repos), MAKEFLAGS
+# (default -j2), DOCKER_MEMORY (default 6g).
 set -euo pipefail
 EXAMPLE_DIR=$(cd "$(dirname "$0")/.." && pwd)
-DISTRO=${1:-acme}
-ROSDISTRO_REF=${ROSDISTRO_REF:-df99d830c178c0a8a73c2995256fd6b5cf956e44}
-ROSDEP_REF=${ROSDEP_REF:-e2e8b965fb4c0ed270c39ad21d4aa5f2ed2fa71b}
+DISTRO=${1:-my-extended-distro}
+ROSDISTRO_REF=${ROSDISTRO_REF:-rep159}
+ROSDEP_REF=${ROSDEP_REF:-rep159}
 
 docker run --rm --memory "${DOCKER_MEMORY:-6g}" \
   -v "$EXAMPLE_DIR:/example:ro" \

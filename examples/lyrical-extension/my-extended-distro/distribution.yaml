@@ -1,9 +1,10 @@
 %YAML 1.1
-# Example REP 159 child distribution: `acme` extends the official ROS 2
-# Lyrical (ros/rosdistro) with binary_import. acme uses Lyrical's binaries
-# as they are (ros-lyrical-*, installed in /opt/ros/lyrical) and adds
-# packages that Lyrical does not have. Its own packages are built and
-# released as ros-acme-*, installed in /opt/ros/acme.
+# Example REP 159 child distribution: `my-extended-distro` extends the
+# official ROS 2 Lyrical (ros/rosdistro) with binary_import. It uses
+# Lyrical's binaries as they are (ros-lyrical-*, installed in
+# /opt/ros/lyrical) and adds packages that Lyrical does not have. Its own
+# packages are built and released as ros-my-extended-distro-*, installed
+# in /opt/ros/my-extended-distro.
 #
 # The two repositories are real community packages, released for Jazzy or
 # Kilted but not for Lyrical. Their ROS dependencies are all in Lyrical.
@@ -16,8 +17,8 @@
 #   Lyrical packages under the child's name is what source_rebuild is for.
 # - The one exception is the child's workspace package (`ros_workspace` by
 #   default, or the `workspace_package` key). The child releases it so
-#   /opt/ros/acme/setup.sh chains /opt/ros/lyrical. It needs its own release
-#   stanza.
+#   /opt/ros/my-extended-distro/setup.sh chains /opt/ros/lyrical. It needs
+#   its own release stanza.
 ---
 extends:
 - distro_name: lyrical

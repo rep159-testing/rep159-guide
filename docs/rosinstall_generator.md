@@ -19,15 +19,16 @@ and the parent begins, or whether the parent is a `binary_import` or a
 `source_rebuild` parent.
 
 Upstream rosinstall_generator (master `96b6f03`) with the rosdistro of
-`rep159.repos`, on the index of `examples/lyrical-extension`
-(`acme` extends Lyrical with `binary_import`):
+[rosdistro#2](https://github.com/rep159-testing/rosdistro/pull/2), on the
+index of `examples/lyrical-extension` (`my-extended-distro` extends
+Lyrical with `binary_import`):
 
 | Command | Result |
 |---|---|
-| `geometry_msgs --rosdistro acme --deps` | 95 Lyrical repositories, `release/lyrical/...` tags. The walk goes into the parent as if it were acme. |
-| `dispatcher --rosdistro acme --deps` | dispatcher is ignored: it has only a source entry, and without `--upstream*` the tool only knows released packages. |
-| `dispatcher --rosdistro acme --upstream-development --deps` | dispatcher alone. Right for `binary_import`, but by accident: the official Lyrical cache has no source manifests (0 source, 1846 release), so the dependencies on Lyrical (`rclcpp`, ...) drop out as unknown. |
-| `rclcpp --rosdistro acme --upstream-development --deps` | Fails: "The following unreleased packages/stacks will be ignored: rclcpp". |
+| `geometry_msgs --rosdistro my-extended-distro --deps` | 95 Lyrical repositories, `release/lyrical/...` tags. The walk goes into the parent as if it were my-extended-distro. |
+| `dispatcher --rosdistro my-extended-distro --deps` | dispatcher is ignored: it has only a source entry, and without `--upstream*` the tool only knows released packages. |
+| `dispatcher --rosdistro my-extended-distro --upstream-development --deps` | dispatcher alone. Right for `binary_import`, but by accident: the official Lyrical cache has no source manifests (0 source, 1846 release), so the dependencies on Lyrical (`rclcpp`, ...) drop out as unknown. |
+| `rclcpp --rosdistro my-extended-distro --upstream-development --deps` | Fails: "The following unreleased packages/stacks will be ignored: rclcpp". |
 
 [KmoM88/rosinstall_generator `feature/rep-2015-tool-integration`](https://github.com/KmoM88/rosinstall_generator/tree/feature/rep-2015-tool-integration)
 (4 commits) adds tests of this flat merge and evaluates the release tag
@@ -52,9 +53,9 @@ template for `--upstream`. It does not add any boundary logic.
    branches for the child's repositories, release tags for the parent's.
    Today `--upstream-development` applies to everything and fails on the
    parent, whose cache has no source manifests.
-5. **Output split by distribution** (`acme.repos`, `lyrical.repos`), to
-   build two chained workspaces, the way `/opt/ros/acme` chains
-   `/opt/ros/lyrical`.
+5. **Output split by distribution** (`my-extended-distro.repos`,
+   `lyrical.repos`), to build two chained workspaces, the way
+   `/opt/ros/my-extended-distro` chains `/opt/ros/lyrical`.
 
 ## Use cases
 

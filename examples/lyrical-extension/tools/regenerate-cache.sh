@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Rebuild acme-cache.yaml.gz. Needs the REP 159 rosdistro (rep159.repos)
-# and network access: the cache holds the package.xml of every source and
+# Rebuild my-extended-distro-cache.yaml.gz. Needs the REP 159 rosdistro
+# (rep159.repos) and network access: the cache holds the package.xml of every source and
 # release entry of the child, fetched from their repositories.
 # --preclean stores the child's distribution file unmerged; the parent's
 # cache is merged in when the child's cache is loaded.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DISTROS=(acme)
+DISTROS=(my-extended-distro)
 
 python3 -m rosdistro.cli.rosdistro_build_cache --preclean --include-source \
     index-v4.yaml "${DISTROS[@]}"
