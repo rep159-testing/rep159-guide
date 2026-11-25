@@ -15,10 +15,9 @@
 # loads this file):
 # - It cannot redefine a repository or package that Lyrical has. Rebuilding
 #   Lyrical packages under the child's name is what source_rebuild is for.
-# - The one exception is the child's workspace package (`ros_workspace` by
-#   default, or the `workspace_package` key). The child releases it so
-#   /opt/ros/my-extended-distro/setup.sh chains /opt/ros/lyrical. It needs
-#   its own release stanza.
+# - The one exception is the child's workspace package (`workspace_package`
+#   below). The child releases it so /opt/ros/my-extended-distro/setup.sh
+#   chains /opt/ros/lyrical. It needs its own release stanza.
 ---
 extends:
 - distro_name: lyrical
@@ -29,6 +28,11 @@ extends:
 release_platforms:
   ubuntu:
   - resolute
+# The package that installs the setup files of the distribution's prefix.
+# ros_workspace is the default, written out here: the ROS 2 one, built with
+# ament, which Lyrical provides. ros_workspace_shell, the same setup files
+# built with plain CMake, is for distributions without ament packages.
+workspace_package: ros_workspace
 repositories:
   kinematic_pose_msgs:
     source:

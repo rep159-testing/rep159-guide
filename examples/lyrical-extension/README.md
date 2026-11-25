@@ -46,6 +46,7 @@ extends:
 - distro_name: lyrical
   index_url: https://raw.githubusercontent.com/ros/rosdistro/master/index-v4.yaml
   extension_method: binary_import
+workspace_package: ros_workspace
 ```
 
 - `index_url` names the index that defines the parent. Lyrical's
@@ -59,9 +60,14 @@ extends:
   'rclcpp' from base distribution 'lyrical' under extension_method
   'binary_import'"). Rebuilding Lyrical packages under the child's name is
   `source_rebuild`.
-- The one exception is the child's workspace package (`ros_workspace`, or
-  the one named by `workspace_package`). Releasing it into the child
-  gives `/opt/ros/my-extended-distro/setup.sh`, which sources
+- `workspace_package` names the package that installs the setup files of
+  the child's prefix. `ros_workspace` is the default, written out here: a
+  ROS distribution uses the ament one, and Lyrical provides ament.
+  `ros_workspace_shell` (plain CMake) is for distributions without ament
+  packages.
+- The workspace package is the one exception to the previous rule.
+  Releasing `ros_workspace` into the child gives
+  `/opt/ros/my-extended-distro/setup.sh`, which sources
   `/opt/ros/lyrical/setup.sh`. It must carry its own release stanza; a
   source entry alone is refused.
 
@@ -70,7 +76,7 @@ extends:
 ```bash
 tools/regenerate-cache.sh
 python3 tools/check_extension.py file://$PWD/index-v4.yaml my-extended-distro \
-    --expect-from-parent rclcpp geometry_msgs
+    --expect-from-parent rclcpp geometry_msgs ros_workspace
 ```
 
 ```
@@ -80,6 +86,7 @@ extends lyrical (binary_import) from https://raw.githubusercontent.com/ros/rosdi
   own: kinematic_pose_msgs source https://github.com/qleonardolp/kinematic_pose_msgs.git@master
 OK   rclcpp: origin lyrical, binary_import
 OK   geometry_msgs: origin lyrical, binary_import
+OK   ros_workspace: origin lyrical, binary_import
 cache: 754 repositories, 1871 release package.xmls, own source manifests complete
 ```
 
