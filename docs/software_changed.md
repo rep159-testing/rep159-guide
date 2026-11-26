@@ -14,6 +14,7 @@ uses that branch until it is merged.
 | [rosdep](https://github.com/rep159-testing/rosdep) | [`feat/rep159-binary-lookup`](https://github.com/rep159-testing/rosdep/tree/feat/rep159-binary-lookup) | [Keys of extended distributions](#rosdep) |
 | [bloom](https://github.com/rep159-testing/bloom) | [`feat/rep159-workspace-package`](https://github.com/rep159-testing/bloom/tree/feat/rep159-workspace-package) | [Debian packages built against the parents](#bloom) |
 | [ros_buildfarm](https://github.com/rep159-testing/ros_buildfarm) | [`feat/rep159-core`](https://github.com/rep159-testing/ros_buildfarm/tree/feat/rep159-core) | [CI and release jobs](#ros_buildfarm) |
+| [colcon-ros-distro](https://github.com/rep159-testing/colcon-ros-distro) | [`rep159`](https://github.com/rep159-testing/colcon-ros-distro/tree/rep159) | [Own packages of an extended distribution](#colcon-ros-distro) |
 | [rosdistro-reviewer](https://github.com/rep159-testing/rosdistro-reviewer) | [`rep159`](https://github.com/rep159-testing/rosdistro-reviewer/tree/rep159) | [End-of-life dates](#rosdistro-reviewer) |
 | [reprepro-updater](https://github.com/rep159-testing/reprepro-updater) | [`rep159`](https://github.com/rep159-testing/reprepro-updater/tree/rep159) | [Package prefix in the sync jobs](#reprepro-updater) |
 | [ros_workspace](https://github.com/rep159-testing/ros_workspace) | [`rep159`](https://github.com/rep159-testing/ros_workspace/tree/rep159) | [Setup files that chain the parents](#ros_workspace) |
@@ -145,6 +146,17 @@ Job containers install rosdistro and rosdep from the ROS apt repositories,
 as upstream ros_buildfarm does. Jobs for an extended distribution need
 the REP 159 versions of both released there.
 
+## colcon-ros-distro
+
+- **Own packages only.** colcon-ros-distro discovers a distribution's
+  released packages for colcon-ros-buildfarm. It now skips the
+  repositories that REP 159 rosdistro marks as coming from a
+  `binary_import` parent (`origin_distro` is another distribution), and
+  logs how many it skipped. The repositories of a `source_rebuild` parent
+  are still discovered, since the child rebuilds them. With a rosdistro
+  that has no REP 159 support, nothing changes. Used by the example's
+  [local release](../examples/lyrical-extension/README.md#6-release-the-debs-locally).
+
 ## rosdistro-reviewer
 
 - Checks that each `distribution_eol_date` in `index-v4.yaml` is a
@@ -184,6 +196,9 @@ the REP 159 versions of both released there.
 
 - `ament_package` (0.18.3) and `ament_cmake_core` (2.8.8), unchanged, to
   build `ros_workspace`. Branch `main`.
+- `colcon-ros-buildfarm`, unchanged, from
+  [colcon/colcon-ros-buildfarm](https://github.com/colcon/colcon-ros-buildfarm)
+  at a commit that is not on PyPI yet, for the example's local release.
 - The indexes and buildfarm configurations of the rep159-testing
   organization: `rep159-rosdistro` and `ros_buildfarm_config`, branches
   `feat/extendable-gazebo` and `rep159-shell`.

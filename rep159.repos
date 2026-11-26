@@ -35,6 +35,15 @@ repositories:
     type: git
     url: https://github.com/rep159-testing/reprepro-updater.git
     version: rep159
+  # Only needed to test building .debs locally, with colcon-ros-buildfarm
+  tools/colcon-ros-distro:
+    type: git
+    url: https://github.com/rep159-testing/colcon-ros-distro.git
+    version: rep159
+  tools/colcon-ros-buildfarm:
+    type: git
+    url: https://github.com/colcon/colcon-ros-buildfarm.git
+    version: 77b22bf6e282532b1bc5f5444d65181ecf65355b  # not on PyPI
   # Workspace packages (CMake) and the ament bootstrap ros_workspace needs
   workspace/ros_workspace:
     type: git
