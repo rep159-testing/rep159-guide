@@ -24,6 +24,8 @@ IMAGE=rep159-guide-release-runner
 die() { echo "release_in_container: $*" >&2; exit 1; }
 
 # Host requirements, checked before anything is created.
+[ "$(id -u)" != 0 ] \
+  || die "run it as your user, not as root: ros_buildfarm refuses uid 0 (add your user to the docker group instead of using sudo)"
 [ "$(uname -s)" = Linux ] || die "needs Linux, found $(uname -s)"
 [ "$(uname -m)" = x86_64 ] || die "needs an x86_64 host, found $(uname -m)"
 [ -S /var/run/docker.sock ] || die "needs the Docker Engine socket at /var/run/docker.sock"
@@ -43,9 +45,13 @@ if [ -n "$(ls -A "$WORK" 2>/dev/null)" ]; then
   die "$WORK is not empty; move it away first: mv $WORK /tmp/"
 fi
 
-echo "===== Runner image"
-docker build -q -f "$EXAMPLE_DIR/tools/release/Dockerfile" -t "$IMAGE" "$REPO_ROOT" >/dev/null
 mkdir -p "$WORK/home"
+echo "===== Runner image (the first build takes a few minutes)"
+if ! docker build --progress=plain -f "$EXAMPLE_DIR/tools/release/Dockerfile" \
+    -t "$IMAGE" "$REPO_ROOT" >"$WORK/runner-image.log" 2>&1; then
+  tail -n 40 "$WORK/runner-image.log" >&2
+  die "the runner image did not build; the whole output is in $WORK/runner-image.log"
+fi
 
 export WORK
 export RELEASE_GIT_PORT=${RELEASE_GIT_PORT:-19418}
@@ -54,8 +60,10 @@ export MAKEFLAGS=${MAKEFLAGS:--j2}
 export RELEASE_STOP_AFTER=${RELEASE_STOP_AFTER:-}
 # The work directory has the same path inside and out: the host's Docker
 # daemon resolves the bind mounts of the job containers the runner starts.
-# No credentials, SSH agent or git configuration go in.
-docker run --rm --network host \
+# No credentials, SSH agent or git configuration go in. --init: Ctrl-C
+# reaches the stage that is running (tini signals the whole process group);
+# a job container that has already started can keep running to its end.
+docker run --rm --init -e TINI_KILL_PROCESS_GROUP=1 --network host \
   --user "$(id -u):$(id -g)" --group-add "$(stat -c %g /var/run/docker.sock)" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$WORK:$WORK" -v "$EXAMPLE_DIR:/example:ro" \

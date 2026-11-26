@@ -129,6 +129,46 @@ def _depends(control):
             if d.strip()]
 
 
+def check_discovered(names, *, packages):
+    """Compare what colcon-ros-distro discovers with the child's packages."""
+    names, packages = set(names), set(packages)
+    errors = []
+    extra = sorted(names - packages)
+    if extra:
+        shown = ', '.join(extra[:10]) + (', ...' if len(extra) > 10 else '')
+        errors.append(f'colcon-ros-distro would build {len(extra)} packages '
+                      f"that are not the child's own: {shown}")
+    missing = sorted(packages - names)
+    if missing:
+        errors.append(
+            f'colcon-ros-distro does not discover: {", ".join(missing)}')
+    return errors
+
+
+def check_logs(texts, *, distro, parent, packages):
+    """Check colcon's logs of a ros_buildfarm release run.
+
+    Returns the colcon-ros-distro lines that report skipping the parent's
+    repositories, the number of logs that show the vendored rosdistro
+    commit (each job prints the head of its ros_buildfarm clone) and the
+    errors.
+    """
+    skip = re.compile(rf"Skipping \d+ repositories that '{re.escape(distro)}'"
+                      rf" takes from '{re.escape(parent)}' as binaries")
+    lines = sorted({m.group(0) for text in texts for m in skip.finditer(text)})
+    vendored = sum('Vendor the REP 159 rosdistro' in text for text in texts)
+    errors = []
+    if not lines:
+        errors.append('colcon-ros-distro did not report skipping the '
+                      f"'{parent}' repositories")
+    if vendored < len(packages):
+        errors.append(
+            f'only {vendored} job logs show the vendored rosdistro commit, '
+            f'expected at least {len(packages)}, one per package: the jobs '
+            'did not clone the local ros_buildfarm branch')
+    return lines, vendored, errors
+
+
 def check_deb(*, control, paths, distro, parent, package, workspace_package):
     errors = []
     deb = debian_name(distro, package)
@@ -234,6 +274,35 @@ def _cmd_buildfarm_config(args, releases):
     return []
 
 
+def _cmd_verify_discovery(args, releases):
+    import logging
+    from colcon_ros_distro.package_discovery.ros_distro import _discover
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('colcon-ros-distro: %(message)s'))
+    logger = logging.getLogger('colcon.colcon_ros_distro')
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    names = sorted(d.name for d in _discover(releases['distro']))
+    print(f'colcon-ros-distro discovers: {", ".join(names[:10])}'
+          + (f' and {len(names) - 10} more' if len(names) > 10 else ''))
+    return check_discovered(names, packages=list(releases['repositories']))
+
+
+def _cmd_check_logs(args, releases):
+    texts = []
+    for root, _, names in os.walk(args.log_dir):
+        for name in names:
+            with open(os.path.join(root, name), errors='replace') as f:
+                texts.append(f.read())
+    lines, vendored, errors = check_logs(
+        texts, distro=releases['distro'], parent=releases['parent'],
+        packages=list(releases['repositories']))
+    for line in lines:
+        print(f'colcon-ros-distro: {line}')
+    print(f'job logs with the vendored rosdistro: {vendored}')
+    return errors
+
+
 def _pool_files(repo_base):
     files = []
     for root, _, names in os.walk(repo_base):
@@ -301,6 +370,13 @@ def main(argv=None):
     p.add_argument('--ros-key', required=True)
     p.add_argument('--makeflags', required=True)
     p.set_defaults(func=_cmd_buildfarm_config)
+
+    p = sub.add_parser('verify-discovery')
+    p.set_defaults(func=_cmd_verify_discovery)
+
+    p = sub.add_parser('check-logs')
+    p.add_argument('log_dir')
+    p.set_defaults(func=_cmd_check_logs)
 
     for name, func in (('verify-pool', _cmd_verify_pool),
                        ('verify-debs', _cmd_verify_debs)):

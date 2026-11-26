@@ -21,8 +21,9 @@ apt-get update -qq
 apt-get install -qq -y --no-install-recommends \
   ros-my-extended-distro-dispatcher ros-my-extended-distro-kinematic-pose-msgs \
   ros-lyrical-ros2pkg ros-lyrical-ros2interface >/dev/null
-dpkg -l 'ros-*' | grep -c '^ii  ros-lyrical-' | sed 's/^/ros-lyrical-* installed: /'
-dpkg -l 'ros-*' | grep '^ii  ros-my-extended-distro-' | awk '{print $2, $3}'
+# || true: grep finding nothing must not end the script before the checks.
+echo "ros-lyrical-* installed: $(dpkg -l 'ros-*' | grep -c '^ii  ros-lyrical-' || true)"
+dpkg -l 'ros-*' | awk '/^ii  ros-my-extended-distro-/ {print $2, $3}'
 
 set +u
 . /opt/ros/my-extended-distro/setup.sh

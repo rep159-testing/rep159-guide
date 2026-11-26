@@ -202,15 +202,17 @@ this machine. Nothing is published.
 tools/release_in_container.sh
 ```
 
-It took 12.5 minutes on the run of 2026-11-26, 8 min 40 s of them in the
-six ros_buildfarm jobs, with the runner image already built. Building the
-image adds a minute or two.
+It took 12.5 and 20 minutes in two runs on 2026-11-26, with the runner
+image already built; the six ros_buildfarm jobs took 8 min 40 s and
+17 min 50 s of that. Building the image adds a minute or two.
 
 **Host.** Linux x86_64 with the rootful Docker Engine at
 `/var/run/docker.sock`; Docker Desktop and rootless Docker are refused.
 The runner container starts the job containers through the host's
 Docker, and ros_buildfarm's job scripts use the host network and
 `linux/amd64` images. Access to the Docker socket is root on the host.
+Run the script as your user, in the `docker` group, not with `sudo`:
+ros_buildfarm refuses to run as root.
 
 Everything runs in the runner image (`tools/release/Dockerfile`, the
 tools of `rep159.repos` built once), as your user, in
@@ -226,9 +228,10 @@ tools of `rep159.repos` built once), as your user, in
    `kinematic_pose_msgs` and `dispatcher` into the local release
    repositories. Their release stanzas go into the copied index, and the
    cache is rebuilt.
-5. `ros_buildfarm release` (colcon-ros-buildfarm) runs ros_buildfarm's
-   source and binary package jobs for the child's own packages, in
-   Docker, against packages.ros.org.
+5. colcon-ros-distro must discover exactly the child's three packages, or
+   the run stops before any job. Then `ros_buildfarm release`
+   (colcon-ros-buildfarm) runs ros_buildfarm's source and binary package
+   jobs for them, in Docker, against packages.ros.org.
 6. The debs are checked: one per package, files only under
    `/opt/ros/my-extended-distro`, and dependencies on `ros-lyrical-*`
    and on `ros-my-extended-distro-ros-workspace`.
@@ -240,11 +243,14 @@ The end of the output, and where the debs end up:
 
 ```
 ===== ros_buildfarm release jobs through colcon-ros-buildfarm
+colcon-ros-distro: Skipping 676 repositories that 'my-extended-distro' takes from 'lyrical' as binaries
+colcon-ros-distro discovers: dispatcher, kinematic_pose_msgs, ros_workspace
 ...
 Summary: 3 packages finished [8min 40s]
-colcon-ros-distro: Skipping 676 repositories that 'my-extended-distro' takes from 'lyrical' as binaries
 ===== Checks on the built packages
-job logs with the vendored rosdistro: 19; source job image imports /tmp/ros_buildfarm/rosdistro/__init__.py
+colcon-ros-distro: Skipping 676 repositories that 'my-extended-distro' takes from 'lyrical' as binaries
+job logs with the vendored rosdistro: 19
+source job image imports /tmp/ros_buildfarm/rosdistro/__init__.py
 ===== Install test in a clean ubuntu:resolute
 ros-lyrical-* installed: 107
 ros-my-extended-distro-dispatcher 0.4.5-1resolute
@@ -261,6 +267,10 @@ RELEASE-OK
 
 `release-work/repo/ubuntu` is an apt repository (`deb [trusted=yes]
 file:<path>/release-work/repo/ubuntu resolute main`).
+
+Ctrl-C stops the run. A job container that has already started can keep
+running until it ends; `docker ps` shows it. If the runner image does not
+build, its output is in `release-work/runner-image.log`.
 
 `RELEASE_WORK_DIR`, `RELEASE_GIT_PORT`, `RELEASE_HTTP_PORT` and
 `MAKEFLAGS` (default `-j2`) change the defaults.

@@ -101,7 +101,9 @@ stage_rosdep() {
     sleep 10
   done
   local got
-  got=$(rosdep resolve geometry_msgs --rosdistro "$DISTRO" </dev/null | tail -n 1)
+  # || true: with pipefail a failed resolve would end the script here,
+  # before the message below.
+  got=$(rosdep resolve geometry_msgs --rosdistro "$DISTRO" </dev/null | tail -n 1) || true
   [ "$got" = ros-lyrical-geometry-msgs ] \
     || die "rosdep resolves geometry_msgs to '$got', expected ros-lyrical-geometry-msgs"
 }
@@ -185,21 +187,17 @@ stage_buildfarm() {
     -o "$WORK/config/ros.asc" https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc
   "${RT[@]}" buildfarm-config "$WORK/config" --index-url "$ROSDISTRO_INDEX_URL" \
     --ros-key "$WORK/config/ros.asc" --makeflags="$MAKEFLAGS"
-  # colcon-ros-distro discovers the child's own packages only; the job
-  # scripts clone the local ros_buildfarm branch (origin of $WORK/ros_buildfarm).
+  # Stop here, before any job, unless colcon-ros-distro discovers exactly
+  # the child's own packages: otherwise the run would build the parent's.
+  "${RT[@]}" verify-discovery
+  # The job scripts clone the local ros_buildfarm branch (the origin and
+  # branch of $WORK/ros_buildfarm, first on PYTHONPATH).
   (cd "$WORK" && ros_buildfarm release \
     --build-base "$WORK/buildfarm" --repo-base "$WORK/repo" \
     --config-url "http://127.0.0.1:$RELEASE_HTTP_PORT/config/index.yaml" \
     --build-name default --target-platform ubuntu:resolute:amd64 \
     --ros-distro "$DISTRO" --executor sequential </dev/null) \
     | tee "$WORK/buildfarm.log"
-  # colcon-ros-distro logs this at INFO, which only colcon's log files keep.
-  local skipped
-  skipped=$(grep -rhos "Skipping [0-9]* repositories that '$DISTRO' takes from 'lyrical' as binaries" \
-    "$WORK/log" | sort -u)
-  [ -n "$skipped" ] \
-    || die "colcon-ros-distro did not report skipping the lyrical repositories"
-  echo "colcon-ros-distro: $skipped"
   grep -q "Summary: 3 packages finished" "$WORK/buildfarm.log" \
     || die "colcon-ros-buildfarm did not finish exactly 3 packages"
 }
@@ -208,18 +206,17 @@ stage_verify() {
   stage "Checks on the built packages"
   "${RT[@]}" verify-pool "$WORK/repo"
   "${RT[@]}" verify-debs "$WORK/repo"
-  local logs
-  logs=$(grep -rl 'Vendor the REP 159 rosdistro' "$WORK/log" | wc -l)
-  [ "$logs" -ge 3 ] \
-    || die "only $logs job logs show the vendored rosdistro commit, expected one per package"
+  # colcon's logs: colcon-ros-distro's skip line, and the head of each job's
+  # ros_buildfarm clone (the vendoring commit).
+  "${RT[@]}" check-logs "$WORK/log"
   local where
   where=$(docker run --rm --entrypoint python3 -e PYTHONPATH=/tmp/ros_buildfarm \
     -v "$WORK/ros_buildfarm:/tmp/ros_buildfarm:ro" \
     "sourcedeb.${DISTRO}_ubuntu_resolute_ros_workspace" \
-    -c 'import rosdistro; print(rosdistro.__file__)' </dev/null)
+    -c 'import rosdistro; print(rosdistro.__file__)' </dev/null) || true
   [ "$where" = /tmp/ros_buildfarm/rosdistro/__init__.py ] \
     || die "the source job image imports rosdistro from $where"
-  echo "job logs with the vendored rosdistro: $logs; source job image imports $where"
+  echo "source job image imports $where"
 }
 
 stage_smoke() {

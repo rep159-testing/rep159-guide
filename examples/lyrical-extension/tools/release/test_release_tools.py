@@ -146,6 +146,49 @@ def test_buildfarm_config_cli_refuses_binary_key(tmp_path, capsys):
     assert not (tmp_path / 'config').exists()
 
 
+PACKAGES = ['ros_workspace', 'kinematic_pose_msgs', 'dispatcher']
+SKIP = ("Skipping 676 repositories that 'my-extended-distro' takes from "
+        "'lyrical' as binaries")
+VENDORED = 'commit 1234\n    Vendor the REP 159 rosdistro df99d83 (local)\n'
+
+
+def test_check_discovered_exact():
+    assert rt.check_discovered(sorted(PACKAGES), packages=PACKAGES) == []
+
+
+def test_check_discovered_refuses_parent_packages():
+    errors = rt.check_discovered(
+        PACKAGES + ['rclcpp', 'geometry_msgs'], packages=PACKAGES)
+    assert errors == [
+        'colcon-ros-distro would build 2 packages that are not the '
+        "child's own: geometry_msgs, rclcpp"]
+
+
+def test_check_discovered_reports_missing():
+    assert rt.check_discovered(['dispatcher'], packages=PACKAGES) == [
+        'colcon-ros-distro does not discover: kinematic_pose_msgs, '
+        'ros_workspace']
+
+
+def test_check_logs_good():
+    texts = [f'INFO:colcon.colcon_ros_distro:{SKIP}\n'] + [VENDORED] * 3
+    assert rt.check_logs(texts, distro=DISTRO, parent='lyrical',
+                         packages=PACKAGES) == ([SKIP], 3, [])
+
+
+def test_check_logs_cli_prints_why(tmp_path, capsys):
+    # No skip line, and no job log with the vendoring commit: the jobs ran
+    # with the stock rosdistro. The command must say so, not just fail.
+    (tmp_path / 'latest').mkdir()
+    (tmp_path / 'latest' / 'logger_all.log').write_text(
+        'Summary: 3 packages finished\n')
+    assert rt.main(['check-logs', str(tmp_path)]) == 1
+    err = capsys.readouterr().err
+    assert "did not report skipping the 'lyrical' repositories" in err
+    assert ('only 0 job logs show the vendored rosdistro commit, '
+            'expected at least 3') in err
+
+
 def test_check_pool_exact():
     pkgs = ['ros_workspace', 'kinematic_pose_msgs', 'dispatcher']
     files = _pool(*pkgs)
