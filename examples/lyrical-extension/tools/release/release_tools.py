@@ -218,8 +218,12 @@ def _cmd_release_version(args, releases):
 
 def _cmd_buildfarm_config(args, releases):
     distro = releases['distro']
-    with open(args.ros_key) as f:
+    with open(args.ros_key, 'rb') as f:
         ros_key = f.read()
+    if not ros_key.startswith(b'-----BEGIN PGP PUBLIC KEY BLOCK-----'):
+        return [f'{args.ros_key} is not an ASCII-armored public key '
+                '(use ros.asc, not ros.key)']
+    ros_key = ros_key.decode('ascii')
     index, release_build = buildfarm_config(
         distro=distro, rosdistro_index_url=args.index_url, ros_key=ros_key,
         makeflags=args.makeflags)

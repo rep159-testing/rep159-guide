@@ -24,6 +24,7 @@ RUN apt-get update -qq \
     python3-colcon-package-selection \
     python3-dateutil \
     python3-empy \
+    python3-jenkinsapi \
     python3-packaging \
     python3-pytest \
     python3-rosdep \

@@ -25,6 +25,8 @@ in Lyrical:
 | `my-extended-distro-cache.yaml.gz` | The distribution cache, from `tools/regenerate-cache.sh`. |
 | `tools/check_extension.py` | Loads the child with its parents merged and reports what it owns. |
 | `tools/build_in_container.sh` | Builds and tests the child's packages against the Lyrical binaries in a clean `ubuntu:resolute`. |
+| `tools/release_in_container.sh` | Releases the child's repositories with bloom and builds their debs with ros_buildfarm's release jobs, all on this machine ([section 6](#6-release-the-debs-locally)). |
+| `tools/release/` | The runner image, its stages, the pinned release versions (`releases.yaml`) and the checks on the debs. |
 
 ## 1. Tools
 
@@ -170,6 +172,8 @@ release (see the table below).
 4. **Build the debs**, with ros_buildfarm release jobs (a farm and a
    `ros_buildfarm_config` for `my-extended-distro`) or by hand from the
    release repository's `debian/my-extended-distro/<package>` branch.
+   [Section 6](#6-release-the-debs-locally) runs steps 2 to 4 on one
+   machine, with nothing published.
 5. **Host them in an apt repository.** Users add it next to
    packages.ros.org.
 
@@ -188,15 +192,118 @@ Use `bloom-release` (or `git-bloom-generate`) only. The standalone
 no parent prefix and does not add the workspace package. Its
 `debian/rules` searches only `/opt/ros/my-extended-distro`.
 
+## 6. Release the debs locally
+
+`tools/release_in_container.sh` releases the child's three repositories
+with bloom and builds their debs with ros_buildfarm's release jobs, on
+this machine. Nothing is published.
+
+```bash
+tools/release_in_container.sh
+```
+
+It took 12.5 minutes on the run of 2026-11-26, 8 min 40 s of them in the
+six ros_buildfarm jobs, with the runner image already built. Building the
+image adds a minute or two.
+
+**Host.** Linux x86_64 with the rootful Docker Engine at
+`/var/run/docker.sock`; Docker Desktop and rootless Docker are refused.
+The runner container starts the job containers through the host's
+Docker, and ros_buildfarm's job scripts use the host network and
+`linux/amd64` images. Access to the Docker socket is root on the host.
+
+Everything runs in the runner image (`tools/release/Dockerfile`, the
+tools of `rep159.repos` built once), as your user, in
+`release-work/`:
+
+1. The index is copied to `release-work/index`, with a release stanza for
+   `ros_workspace` 1.0.4-1, and served on `127.0.0.1:18159`. Empty release
+   repositories are served by `git daemon` on `127.0.0.1:19418`.
+2. `rosdep update` reads that index; `geometry_msgs` must resolve to
+   `ros-lyrical-geometry-msgs`.
+3. A local ros_buildfarm branch gets the REP 159 rosdistro (below).
+4. `bloom-release --no-pull-request` releases `ros_workspace`,
+   `kinematic_pose_msgs` and `dispatcher` into the local release
+   repositories. Their release stanzas go into the copied index, and the
+   cache is rebuilt.
+5. `ros_buildfarm release` (colcon-ros-buildfarm) runs ros_buildfarm's
+   source and binary package jobs for the child's own packages, in
+   Docker, against packages.ros.org.
+6. The debs are checked: one per package, files only under
+   `/opt/ros/my-extended-distro`, and dependencies on `ros-lyrical-*`
+   and on `ros-my-extended-distro-ros-workspace`.
+7. They are installed in a clean `ubuntu:resolute` next to the Lyrical
+   binaries. `ros2 pkg prefix` finds `kinematic_pose_msgs` in
+   `/opt/ros/my-extended-distro` and `rclcpp` in `/opt/ros/lyrical`.
+
+The end of the output, and where the debs end up:
+
+```
+===== ros_buildfarm release jobs through colcon-ros-buildfarm
+...
+Summary: 3 packages finished [8min 40s]
+colcon-ros-distro: Skipping 676 repositories that 'my-extended-distro' takes from 'lyrical' as binaries
+===== Checks on the built packages
+job logs with the vendored rosdistro: 19; source job image imports /tmp/ros_buildfarm/rosdistro/__init__.py
+===== Install test in a clean ubuntu:resolute
+ros-lyrical-* installed: 107
+ros-my-extended-distro-dispatcher 0.4.5-1resolute
+ros-my-extended-distro-kinematic-pose-msgs 1.0.0-1resolute
+ros-my-extended-distro-ros-workspace 1.0.4-1resolute
+kinematic_pose_msgs interfaces: kinematic_pose_msgs/msg/KinematicPose
+SMOKE-OK
+===== Done
+release-work/repo/ubuntu/pool/r/ros-my-extended-distro-dispatcher/ros-my-extended-distro-dispatcher_0.4.5-1resolute_amd64.deb
+release-work/repo/ubuntu/pool/r/ros-my-extended-distro-kinematic-pose-msgs/ros-my-extended-distro-kinematic-pose-msgs_1.0.0-1resolute_amd64.deb
+release-work/repo/ubuntu/pool/r/ros-my-extended-distro-ros-workspace/ros-my-extended-distro-ros-workspace_1.0.4-1resolute_amd64.deb
+RELEASE-OK
+```
+
+`release-work/repo/ubuntu` is an apt repository (`deb [trusted=yes]
+file:<path>/release-work/repo/ubuntu resolute main`).
+
+`RELEASE_WORK_DIR`, `RELEASE_GIT_PORT`, `RELEASE_HTTP_PORT` and
+`MAKEFLAGS` (default `-j2`) change the defaults.
+`RELEASE_STOP_AFTER=prepare` stops after step 4.
+
+**What it shows.** bloom releases into a `binary_import` child, with the
+child's workspace package. ros_buildfarm's release jobs read a version 3
+distribution file and build the child's packages against the parent's
+binaries, named `ros-my-extended-distro-*` and depending on
+`ros-lyrical-*`. colcon-ros-distro, with the change in
+[software_changed.md](../../docs/software_changed.md#colcon-ros-distro),
+selects only the child's own packages.
+
+**What it does not show.** Publishing: bloom opens no pull request
+against the index, nothing is pushed (pushes to GitHub fail inside the
+runner) and nothing is uploaded. The farm's import and sync jobs and
+Jenkins are not involved.
+
+**The vendored rosdistro.** ros_buildfarm's job containers install the
+stock `python3-rosdistro-modules`, which cannot read a version 3 file.
+Each job clones the ros_buildfarm checkout that generated it (its origin
+URL and branch) and runs its scripts with that clone first on
+`PYTHONPATH`. The run makes a local branch, `rep159-guide-local`, of the
+image's ros_buildfarm checkout, with one commit that adds the REP 159
+rosdistro as a `rosdistro/` directory at its root. That commit adds a
+directory and changes no ros_buildfarm code. The jobs import it instead
+of the apt package. The branch is served from `release-work` and never
+pushed.
+
+**Rerunning.** The script refuses a work directory that is not empty;
+move the last one away first: `mv release-work /tmp/`.
+
 ## Not covered yet (state on 2026-11-25)
 
 - **ros_buildfarm jobs.** ros_buildfarm with
   [#1](https://github.com/rep159-testing/ros_buildfarm/pull/1) installs
   the stock apt `python3-rosdistro-modules` and `python3-rosdep-modules`
   in its job containers. Those cannot read a version 3 distribution file,
-  so CI and release jobs for `my-extended-distro` fail until REP 159
-  rosdistro and rosdep are released to the ROS apt repositories, or the
-  containers are patched to pip-install the forks.
+  so CI and release jobs for `my-extended-distro` fail on a farm until
+  REP 159 rosdistro and rosdep are released to the ROS apt repositories,
+  or the containers are patched to pip-install the forks.
+  [Section 6](#6-release-the-debs-locally) gets around it for local
+  release jobs by vendoring rosdistro into a local ros_buildfarm branch.
 - **rosinstall_generator** reads an extended distribution as one flat
   list: `--deps` walks into Lyrical's repositories, and the child's
   unreleased packages need `--upstream-development`. Use

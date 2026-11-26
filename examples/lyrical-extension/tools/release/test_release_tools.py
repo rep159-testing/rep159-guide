@@ -133,6 +133,19 @@ def test_buildfarm_config_loads_with_ros_buildfarm():
     assert build.repository_urls == ['http://packages.ros.org/ros2/ubuntu']
 
 
+def test_buildfarm_config_cli_refuses_binary_key(tmp_path, capsys):
+    # ros/rosdistro's ros.key is a binary key; the Dockerfiles ros_buildfarm
+    # writes need the ASCII-armored ros.asc.
+    key = tmp_path / 'ros.key'
+    key.write_bytes(b'\x99\x02\r\x04\\\xef')
+    assert rt.main([
+        'buildfarm-config', str(tmp_path / 'config'),
+        '--index-url', 'http://127.0.0.1:18159/index/index-v4.yaml',
+        '--ros-key', str(key), '--makeflags=-j2']) == 1
+    assert 'not an ASCII-armored public key' in capsys.readouterr().err
+    assert not (tmp_path / 'config').exists()
+
+
 def test_check_pool_exact():
     pkgs = ['ros_workspace', 'kinematic_pose_msgs', 'dispatcher']
     files = _pool(*pkgs)

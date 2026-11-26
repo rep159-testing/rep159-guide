@@ -178,7 +178,57 @@ stage_stanzas_and_cache() {
 }
 
 stage_buildfarm() {
-  die "stage_buildfarm: not implemented"
+  stage "ros_buildfarm release jobs through colcon-ros-buildfarm"
+  mkdir -p "$WORK/config"
+  # ros_buildfarm writes the key into its Dockerfiles: the armored ros.asc.
+  curl -fsSL --retry 5 --retry-all-errors --max-time 300 \
+    -o "$WORK/config/ros.asc" https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc
+  "${RT[@]}" buildfarm-config "$WORK/config" --index-url "$ROSDISTRO_INDEX_URL" \
+    --ros-key "$WORK/config/ros.asc" --makeflags="$MAKEFLAGS"
+  # colcon-ros-distro discovers the child's own packages only; the job
+  # scripts clone the local ros_buildfarm branch (origin of $WORK/ros_buildfarm).
+  (cd "$WORK" && ros_buildfarm release \
+    --build-base "$WORK/buildfarm" --repo-base "$WORK/repo" \
+    --config-url "http://127.0.0.1:$RELEASE_HTTP_PORT/config/index.yaml" \
+    --build-name default --target-platform ubuntu:resolute:amd64 \
+    --ros-distro "$DISTRO" --executor sequential </dev/null) \
+    | tee "$WORK/buildfarm.log"
+  # colcon-ros-distro logs this at INFO, which only colcon's log files keep.
+  local skipped
+  skipped=$(grep -rhos "Skipping [0-9]* repositories that '$DISTRO' takes from 'lyrical' as binaries" \
+    "$WORK/log" | sort -u)
+  [ -n "$skipped" ] \
+    || die "colcon-ros-distro did not report skipping the lyrical repositories"
+  echo "colcon-ros-distro: $skipped"
+  grep -q "Summary: 3 packages finished" "$WORK/buildfarm.log" \
+    || die "colcon-ros-buildfarm did not finish exactly 3 packages"
+}
+
+stage_verify() {
+  stage "Checks on the built packages"
+  "${RT[@]}" verify-pool "$WORK/repo"
+  "${RT[@]}" verify-debs "$WORK/repo"
+  local logs
+  logs=$(grep -rl 'Vendor the REP 159 rosdistro' "$WORK/log" | wc -l)
+  [ "$logs" -ge 3 ] \
+    || die "only $logs job logs show the vendored rosdistro commit, expected one per package"
+  local where
+  where=$(docker run --rm --entrypoint python3 -e PYTHONPATH=/tmp/ros_buildfarm \
+    -v "$WORK/ros_buildfarm:/tmp/ros_buildfarm:ro" \
+    "sourcedeb.${DISTRO}_ubuntu_resolute_ros_workspace" \
+    -c 'import rosdistro; print(rosdistro.__file__)' </dev/null)
+  [ "$where" = /tmp/ros_buildfarm/rosdistro/__init__.py ] \
+    || die "the source job image imports rosdistro from $where"
+  echo "job logs with the vendored rosdistro: $logs; source job image imports $where"
+}
+
+stage_smoke() {
+  stage "Install test in a clean ubuntu:resolute"
+  # /example is this container's own mount, which the host daemon cannot
+  # see; $WORK has the same path on both sides.
+  cp "$TOOLS/smoke_install.sh" "$WORK/smoke_install.sh"
+  docker run --rm -v "$WORK:$WORK:ro" ubuntu:resolute \
+    bash "$WORK/smoke_install.sh" "$WORK/repo" </dev/null
 }
 
 preflight_ports
@@ -190,3 +240,8 @@ stage_ros_buildfarm_branch
 stage_bloom
 stage_stanzas_and_cache
 stage_buildfarm
+stage_verify
+stage_smoke
+stage "Done"
+find "$WORK/repo" -name '*.deb' | sort
+echo RELEASE-OK
