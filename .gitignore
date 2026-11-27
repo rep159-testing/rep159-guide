@@ -1,3 +1,4 @@
 # rosdistro_build_cache writes both; only the gzip is read
 examples/*/*-cache.yaml
 __pycache__/
+examples/*/release-work/
