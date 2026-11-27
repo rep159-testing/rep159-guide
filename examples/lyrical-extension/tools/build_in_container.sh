@@ -15,8 +15,8 @@
 set -euo pipefail
 EXAMPLE_DIR=$(cd "$(dirname "$0")/.." && pwd)
 DISTRO=${1:-my-extended-distro}
-ROSDISTRO_REF=${ROSDISTRO_REF:-feat/rep159-workspace-package}
-ROSDEP_REF=${ROSDEP_REF:-feat/rep159-binary-lookup}
+ROSDISTRO_REF=${ROSDISTRO_REF:-rep159}
+ROSDEP_REF=${ROSDEP_REF:-rep159}
 
 docker run --rm --memory "${DOCKER_MEMORY:-6g}" \
   -v "$EXAMPLE_DIR:/example:ro" \

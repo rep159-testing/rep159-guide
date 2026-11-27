@@ -69,7 +69,10 @@ workspace_package: ros_workspace
   Releasing `ros_workspace` into the child gives
   `/opt/ros/my-extended-distro/setup.sh`, which sources
   `/opt/ros/lyrical/setup.sh`. It must carry its own release stanza; a
-  source entry alone is refused.
+  source entry alone is refused. With the split `ros_workspace`
+  ([ros_workspace#1](https://github.com/rep159-testing/ros_workspace/pull/1)),
+  which depends on `ros_workspace_shell`, the child releases its own
+  `ros_workspace_shell` too, and rosdistro allows it.
 
 ## 3. Check it and build the cache
 

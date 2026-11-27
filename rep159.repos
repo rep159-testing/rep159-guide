@@ -14,11 +14,11 @@ repositories:
   tools/rosdistro:
     type: git
     url: https://github.com/rep159-testing/rosdistro.git
-    version: feat/rep159-workspace-package  # until rosdistro#2 is merged into rep159
+    version: rep159
   tools/rosdep:
     type: git
     url: https://github.com/rep159-testing/rosdep.git
-    version: feat/rep159-binary-lookup  # until rosdep#1 is merged into rep159
+    version: rep159
   tools/bloom:
     type: git
     url: https://github.com/rep159-testing/bloom.git

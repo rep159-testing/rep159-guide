@@ -3,15 +3,15 @@
 The REP 159 versions of the tools live in the
 [rep159-testing](https://github.com/rep159-testing) organization, and
 [`rep159.repos`](../rep159.repos) lists them as one colcon workspace. Each
-tool collects its REP 159 work on a `rep159` branch. For rosdistro,
-rosdep, bloom and ros_buildfarm, part of that work is still on a branch
-with an open pull request into `rep159` (2026-11-25), and `rep159.repos`
-uses that branch until it is merged.
+tool collects its REP 159 work on a `rep159` branch. For bloom and
+ros_buildfarm, part of that work is still on a branch with an open pull
+request into `rep159` (2026-11-27), and `rep159.repos` uses that branch
+until it is merged.
 
 | Repository | Branch | Changes |
 |---|---|---|
-| [rosdistro](https://github.com/rep159-testing/rosdistro) | [`feat/rep159-workspace-package`](https://github.com/rep159-testing/rosdistro/tree/feat/rep159-workspace-package) | [Distribution format 3, index format 4](#rosdistro) |
-| [rosdep](https://github.com/rep159-testing/rosdep) | [`feat/rep159-binary-lookup`](https://github.com/rep159-testing/rosdep/tree/feat/rep159-binary-lookup) | [Keys of extended distributions](#rosdep) |
+| [rosdistro](https://github.com/rep159-testing/rosdistro) | [`rep159`](https://github.com/rep159-testing/rosdistro/tree/rep159) | [Distribution format 3, index format 4](#rosdistro) |
+| [rosdep](https://github.com/rep159-testing/rosdep) | [`rep159`](https://github.com/rep159-testing/rosdep/tree/rep159) | [Keys of extended distributions](#rosdep) |
 | [bloom](https://github.com/rep159-testing/bloom) | [`feat/rep159-workspace-package`](https://github.com/rep159-testing/bloom/tree/feat/rep159-workspace-package) | [Debian packages built against the parents](#bloom) |
 | [ros_buildfarm](https://github.com/rep159-testing/ros_buildfarm) | [`feat/rep159-core`](https://github.com/rep159-testing/ros_buildfarm/tree/feat/rep159-core) | [CI and release jobs](#ros_buildfarm) |
 | [colcon-ros-distro](https://github.com/rep159-testing/colcon-ros-distro) | [`rep159`](https://github.com/rep159-testing/colcon-ros-distro/tree/rep159) | [Own packages of an extended distribution](#colcon-ros-distro) |
@@ -43,7 +43,15 @@ Distribution file format version 3:
   (`ros_workspace_shell` for a distribution without ament). It is the one
   exception to the rule above: a `binary_import` child may release its
   own, keeping the parent's source and doc entries, and it must give its
-  own release entry.
+  own release entry. Since `ros_workspace` depends on
+  `ros_workspace_shell` for the setup files of its prefix, a child that
+  releases its own `ros_workspace` may release its own
+  `ros_workspace_shell` too
+  ([rosdistro#4](https://github.com/rep159-testing/rosdistro/pull/4)).
+  Releasing `ros_workspace_shell` alone is still refused. Releasing
+  `ros_workspace` while taking `ros_workspace_shell` from the parent
+  logs a warning: the shell's setup files would go to the parent's
+  prefix, not the child's.
 - **`binary_rule`**: the binary package names of a distribution, as a
   regular expression `search` and `replace` with the placeholders
   `{distro}`, `{package}` and `{origin_distro}`. It can be set on the
